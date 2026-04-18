@@ -78,7 +78,7 @@ function formatStatus(session: PracticeSession): string {
     `Goal: ${session.goal}`,
     `Difficulty: ${session.difficulty}/5`,
     `Completed rounds: ${session.completedRounds}`,
-    session.lastFeedback ? `Last feedback:\n${session.lastFeedback}` : 'No feedback yet. Send /done after a round.',
+    session.lastFeedback ? `Last feedback:\n${session.lastFeedback}` : 'No feedback yet. Text debrief after a round.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -126,14 +126,8 @@ export class PhotonPracticeRuntime {
       return
     }
 
-    if (chat.setupDraft) {
-      await this.handleSetupAnswer(chat, message)
-      await this.store.save()
-      return
-    }
-
     if (!chat.session) {
-      await this.sendAgentMessage(chat, formatHelpText(), undefined, message)
+      await this.bootstrapSession(chat, message)
       await this.store.save()
       return
     }
@@ -157,35 +151,26 @@ export class PhotonPracticeRuntime {
         await this.sendAgentMessage(chat, formatHelpText(), undefined, message)
         return
       case 'setup':
-        chat.setupDraft = {}
-        await this.sendAgentMessage(chat, 'Who is this person to you?', undefined, message)
+        await this.sendAgentMessage(
+          chat,
+          'Send one text with the situation, who it is with, and what outcome you want. I will draft the opener.',
+          undefined,
+          message,
+        )
         return
       case 'status':
         await this.sendAgentMessage(
           chat,
-          chat.setupDraft
-            ? 'Setup in progress. I still need: ' +
-                [
-                  chat.setupDraft.person ? null : 'who they are to you',
-                  chat.setupDraft.situation ? null : 'what the conversation is about',
-                  chat.setupDraft.goal ? null : 'the outcome you want',
-                ]
-                  .filter(Boolean)
-                  .join(', ')
-            : chat.session
-              ? formatStatus(chat.session)
-              : formatHelpText(),
+          chat.session ? formatStatus(chat.session) : formatHelpText(),
           undefined,
           message,
         )
         return
       case 'reset':
         chat.session = undefined
-        chat.setupDraft = undefined
-        await this.sendAgentMessage(chat, 'Cleared. Text setup to start again.', undefined, message)
+        await this.sendAgentMessage(chat, 'Cleared. Send the situation whenever you want to start again.', undefined, message)
         return
       case 'new':
-        chat.setupDraft = undefined
         chat.session = createSession(command)
         await this.sendAgentMessage(
           chat,
@@ -196,7 +181,7 @@ export class PhotonPracticeRuntime {
             `Goal: ${command.goal}`,
             `Difficulty: 1/5`,
             '',
-            'Text me like it is real. Send /done when you want feedback.',
+            'Text me like it is real. Text debrief when you want feedback.',
           ].join('\n'),
           undefined,
           message,
@@ -227,7 +212,12 @@ export class PhotonPracticeRuntime {
         return
       case 'done': {
         if (!chat.session || chat.session.transcript.length === 0) {
-          await this.sendAgentMessage(chat, 'There is no round to review yet. Start with setup, then text normally.', undefined, message)
+          await this.sendAgentMessage(
+            chat,
+            'There is no round to review yet. Send the situation first, then text the opener you want to practice.',
+            undefined,
+            message,
+          )
           return
         }
 
@@ -256,47 +246,22 @@ export class PhotonPracticeRuntime {
     }
   }
 
-  private async handleSetupAnswer(chat: ChatState, message: Message): Promise<void> {
-    if (!chat.setupDraft) {
+  private async bootstrapSession(chat: ChatState, message: Message): Promise<void> {
+    const brief = message.text?.trim()
+    if (!brief) {
       return
     }
 
-    const answer = message.text?.trim()
-    if (!answer) {
-      return
-    }
-
-    if (!chat.setupDraft.person) {
-      chat.setupDraft.person = answer
-      await this.sendAgentMessage(chat, "What's the conversation about?", undefined, message)
-      return
-    }
-
-    if (!chat.setupDraft.situation) {
-      chat.setupDraft.situation = answer
-      await this.sendAgentMessage(chat, 'What outcome do you want?', undefined, message)
-      return
-    }
-
-    chat.setupDraft.goal = answer
+    const bootstrap = await this.model.bootstrapFromBrief(brief)
     chat.session = createSession({
-      person: chat.setupDraft.person,
-      situation: chat.setupDraft.situation,
-      goal: chat.setupDraft.goal,
+      person: bootstrap.person,
+      situation: bootstrap.situation,
+      goal: bootstrap.goal,
     })
-    chat.setupDraft = undefined
 
     await this.sendAgentMessage(
       chat,
-      [
-        'Locked in.',
-        `Person: ${chat.session.person}`,
-        `Scenario: ${chat.session.situation}`,
-        `Goal: ${chat.session.goal}`,
-        'Difficulty: 1/5',
-        '',
-        'Text me like it is real. When you want notes, text debrief.',
-      ].join('\n'),
+      bootstrap.opener,
       undefined,
       message,
     )

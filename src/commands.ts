@@ -83,15 +83,18 @@ export function parseCommand(text: string): Command | null {
 
 export function formatHelpText(): string {
   return [
-    'Try one of these:',
-    'setup',
-    '/new boss | ask for a raise after a rough quarter | leave with a concrete next step',
+    'Just text the situation in one line.',
+    'Example:',
+    'ask for a raise after a rough quarter with my boss. leave with a concrete next step',
+    '',
+    'Optional controls:',
     'debrief',
     'harder',
     'ready',
     'status',
     'reset',
     '',
-    'Then text normally and I will become that person.',
+    'Power-user shortcut:',
+    '/new boss | ask for a raise after a rough quarter | leave with a concrete next step',
   ].join('\n')
 }

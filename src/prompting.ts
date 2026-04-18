@@ -89,6 +89,32 @@ export function buildFeedbackPrompt(session: PracticeSession): string {
   ].join('\n')
 }
 
+export function buildBootstrapPrompt(brief: string): string {
+  return [
+    'You are setting up a hard-conversation rehearsal from a messy one-line user brief.',
+    'Infer the person, the scenario, the desired outcome, and write the first text the user should send.',
+    'The opener should sound like a real iMessage the user could send right now.',
+    '',
+    'Rules for the opener:',
+    '- first person',
+    '- concrete and emotionally intelligent',
+    '- concise enough for a single text bubble',
+    '- no markdown',
+    '- no labels',
+    '- no surrounding quotation marks',
+    '',
+    'Return JSON only with exactly these keys:',
+    '{',
+    '  "person": string,',
+    '  "situation": string,',
+    '  "goal": string,',
+    '  "opener": string',
+    '}',
+    '',
+    `User brief: ${brief}`,
+  ].join('\n')
+}
+
 export function buildTranscriptExcerpt(turns: TranscriptTurn[]): string {
   return turns
     .slice(-8)

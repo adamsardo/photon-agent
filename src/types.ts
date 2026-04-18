@@ -38,11 +38,6 @@ export interface AgentEcho {
 export interface ChatState {
   chatId: string
   session?: PracticeSession
-  setupDraft?: {
-    person?: string
-    situation?: string
-    goal?: string
-  }
   recentAgentEchoes: AgentEcho[]
 }
 

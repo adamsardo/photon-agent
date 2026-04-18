@@ -18,21 +18,32 @@ This prototype runs in a configured local Messages thread on a Mac. A hosted pho
 
 ```mermaid
 flowchart LR
-    A["text: setup"] --> B["3 quick prompts"]
-    B --> C["rehearsal in iMessage"]
-    C --> D["text: debrief"]
-    D --> E["feedback + difficulty up"]
-    E --> C
-    C --> F["text: harder"]
-    C --> G["text: ready"]
+    A["send one-line brief"] --> B["AI infers person + goal"]
+    B --> C["returns suggested opener"]
+    C --> D["you text your version back"]
+    D --> E["rehearsal in iMessage"]
+    E --> F["text: debrief"]
+    F --> G["feedback + difficulty up"]
+    G --> E
+    E --> H["text: harder"]
+    E --> I["text: ready"]
 ```
 
-### Commands
+### Primary Flow
 
-Send these in the configured Messages thread:
+Just send a natural brief:
 
 ```text
-setup
+ask for a raise after a rough quarter with my boss. leave with a concrete next step
+```
+
+The agent replies with the opening text you should send.
+
+Then you text your version back into the thread and it becomes the other person.
+
+### Optional Controls
+
+```text
 debrief
 harder
 ready
@@ -40,7 +51,7 @@ status
 reset
 ```
 
-Fast path:
+Power-user shortcut:
 
 ```text
 /new boss | ask for a raise after a rough quarter | leave with a concrete next step
@@ -48,11 +59,9 @@ Fast path:
 
 ## Product Shape
 
-- `setup` asks:
-  1. who this person is to you
-  2. what the conversation is about
-  3. what outcome you want
-- Then the thread becomes them.
+- The first message can be messy. The runtime infers who this is with, what the conversation is about, and what outcome you want.
+- First reply is a suggested opener in your voice.
+- Once you text back, the thread becomes them.
 - `debrief` returns:
   - what landed
   - where you lost leverage

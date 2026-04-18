@@ -41,7 +41,7 @@ test('parses conversational aliases without slashes', () => {
 
 test('help text references primary commands', () => {
   const help = formatHelpText()
-  assert.match(help, /setup/)
+  assert.match(help, /Just text the situation/)
   assert.match(help, /debrief/)
   assert.match(help, /harder/)
   assert.match(help, /ready/)
